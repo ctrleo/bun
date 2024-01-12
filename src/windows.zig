@@ -2960,3 +2960,24 @@ pub extern "kernel32" fn CopyFileW(
     dest: [*:0]const u16,
     bFailIfExists: win32.BOOL,
 ) win32.BOOL;
+
+pub fn getLastErrno() bun.C.E {
+    return switch (bun.windows.kernel32.GetLastError()) {
+        .SUCCESS => .SUCCESS,
+        .FILE_NOT_FOUND => .NOENT,
+        .PATH_NOT_FOUND => .NOENT,
+        .TOO_MANY_OPEN_FILES => .NOMEM,
+        .ACCESS_DENIED => .PERM,
+        .INVALID_HANDLE => .BADF,
+        .NOT_ENOUGH_MEMORY => .NOMEM,
+        .OUTOFMEMORY => .NOMEM,
+        .INVALID_PARAMETER => .INVAL,
+
+        else => |t| {
+            if (bun.Environment.isDebug) {
+                bun.Output.warn("Called getLastErrno with {s} which does not have a mapping to errno", .{@tagName(t)});
+            }
+            return .UNKNOWN;
+        },
+    };
+}
